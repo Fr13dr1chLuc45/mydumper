@@ -80,6 +80,7 @@ gchar *set_names_str=NULL;
 guint errors = 0;
 guint max_threads_per_table=4;
 gboolean append_if_not_exist=FALSE;
+gboolean remove_indices=FALSE;
 //unsigned long long int total_data_sql_files = 0;
 //unsigned long long int progress = 0;
 //GHashTable *db_hash=NULL;
@@ -158,7 +159,9 @@ static GOptionEntry entries[] = {
       "which default value will be /usr/local/percona/pmm2/collectors/textfile-collector/high-resolution", NULL },
     { "pmm-resolution", 0, 0, G_OPTION_ARG_STRING, &pmm_resolution,
       "which default will be high", NULL },    
-    {NULL, 0, 0, G_OPTION_ARG_NONE, NULL, NULL, NULL}};
+    {"remove-indices", 0, 0, G_OPTION_ARG_NONE, &remove_indices, "removing indices while importing", NULL},
+    {NULL, 0, 0, G_OPTION_ARG_NONE, NULL, NULL, NULL}
+};
 
 GHashTable * myloader_initialize_hash_of_session_variables(){
   GHashTable * set_session_hash=initialize_hash_of_session_variables();

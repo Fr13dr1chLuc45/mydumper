@@ -228,10 +228,12 @@ int process_create_table_statement (gchar * statement, GString *create_table_sta
   int flag=0;
   gchar** split_file= g_strsplit(statement, "\n", -1);
   gchar *autoinc_column=NULL;
+  GString *create_index_statement;
   append_alter_table(alter_table_statement, dbt->real_database,dbt->real_table);
   append_alter_table(alter_table_constraint_statement, dbt->real_database,dbt->real_table);
   int fulltext_counter=0;
   int i=0;
+  create_index_statement = g_string_new("");
   for (i=0; i < (int)g_strv_length(split_file);i++){
     if ( g_strstr_len(split_file[i],5,"  KEY")
       || g_strstr_len(split_file[i],8,"  UNIQUE")
@@ -239,22 +241,47 @@ int process_create_table_statement (gchar * statement, GString *create_table_sta
       || g_strstr_len(split_file[i],10,"  FULLTEXT")
       || g_strstr_len(split_file[i],7,"  INDEX")
       ){
-      // Ignore if the first column of the index is the AUTO_INCREMENT column
-      if ((autoinc_column != NULL) && (g_strrstr(split_file[i],autoinc_column))){
-        g_string_append(create_table_statement, split_file[i]);
-        g_string_append_c(create_table_statement,'\n');
-      }else{
-        flag|=IS_ALTER_TABLE_PRESENT;
-        if (g_strrstr(split_file[i],"  FULLTEXT")) fulltext_counter++;
-        if (fulltext_counter>1){
-          fulltext_counter=1;
-          finish_alter_table(alter_table_statement);
-          append_alter_table(alter_table_statement,dbt->real_database,dbt->real_table);
+        if (remove_indices){
+          gchar *poschar=g_strrstr(split_file[i],",");
+          if (poschar && *(poschar+1)=='\0'){
+            *poschar='\0';
+          }
+          if (g_string_equal(create_table_statement, g_string_new(""))){
+            create_table_statement = g_string_new("/*!40101 SET NAMES binary*/;\n/*!40014 SET FOREIGN_KEY_CHECKS=0*/;\n\nALTER TABLE `");
+						create_table_statement = g_string_append(create_table_statement, dbt->real_table);
+						create_table_statement = g_string_append(create_table_statement, "` ");
+          }else{
+            create_table_statement = g_string_append(create_table_statement, ",");
+          }
+          create_table_statement = g_string_append(g_string_append(create_table_statement, "\n  ADD "), split_file[i]);
+          create_index_statement = g_string_append(create_index_statement, split_file[i]);
+          create_index_statement = g_string_append_c(create_index_statement, '\n');
+        }else{
+          // Ignore if the first column of the index is the AUTO_INCREMENT column
+          if ((autoinc_column != NULL) && (g_strrstr(split_file[i],autoinc_column))){
+            g_string_append(create_table_statement, split_file[i]);
+            g_string_append_c(create_table_statement,'\n');
+          }else{
+            flag|=IS_ALTER_TABLE_PRESENT;
+            if (g_strrstr(split_file[i],"  FULLTEXT")) fulltext_counter++;
+            if (fulltext_counter>1){
+              fulltext_counter=1;
+              finish_alter_table(alter_table_statement);
+              append_alter_table(alter_table_statement,dbt->real_database,dbt->real_table);
+            }
+            g_string_append(alter_table_statement,"\n ADD");
+            g_string_append(alter_table_statement, split_file[i]);
+          }
         }
-        g_string_append(alter_table_statement,"\n ADD");
-        g_string_append(alter_table_statement, split_file[i]);
-      }
     }else{
+      if(g_string_equal(create_table_statement, g_string_new(""))){
+        create_table_statement = g_string_new("/*!40101 SET NAMES binary*/;\n/*!40014 SET FOREIGN_KEY_CHECKS=0*/;\n\nALTER TABLE `");
+				create_table_statement = g_string_append(create_table_statement, dbt->real_table);
+				create_table_statement = g_string_append(create_table_statement, "` ");
+      }else{
+        create_table_statement = g_string_append(create_table_statement, ",");
+      }
+      create_table_statement = g_string_append(g_string_append(create_table_statement, "\n  ADD "), split_file[i]);
       if (g_strstr_len(split_file[i],12,"  CONSTRAINT")){
         flag|=INCLUDE_CONSTRAINT;
         g_string_append(alter_table_constraint_statement,"\n ADD");

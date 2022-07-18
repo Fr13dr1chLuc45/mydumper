@@ -67,6 +67,7 @@ gboolean overwrite_tables = FALSE;
 gboolean innodb_optimize_keys = FALSE;
 gboolean innodb_optimize_keys_per_table = FALSE;
 gboolean innodb_optimize_keys_all_tables = FALSE;
+gboolean innodb_optimize_keys_single_index = FALSE;
 gboolean enable_binlog = FALSE;
 gboolean disable_redo_log = FALSE;
 gboolean skip_triggers = FALSE;
@@ -99,16 +100,25 @@ gboolean arguments_callback(const gchar *option_name,const gchar *value, gpointe
     if (value==NULL){
       innodb_optimize_keys_per_table = TRUE;
       innodb_optimize_keys_all_tables = FALSE;
+      innodb_optimize_keys_single_index = FALSE;
       return TRUE;
     }
     if (g_strstr_len(value,22,"AFTER_IMPORT_PER_TABLE")){
       innodb_optimize_keys_per_table = TRUE;
       innodb_optimize_keys_all_tables = FALSE;
+      innodb_optimize_keys_single_index = FALSE;
       return TRUE;
     }
     if (g_strstr_len(value,23,"AFTER_IMPORT_ALL_TABLES")){
       innodb_optimize_keys_all_tables = TRUE;
       innodb_optimize_keys_per_table = FALSE;
+      innodb_optimize_keys_single_index = FALSE;
+      return TRUE;
+    }
+    if (g_strstr_len(value,24,"AFTER_IMPORT_SINGLE_INDEX")){
+      innodb_optimize_keys_all_tables = FALSE;
+      innodb_optimize_keys_per_table = FALSE;
+      innodb_optimize_keys_single_index = TRUE;
       return TRUE;
     }
   }
@@ -131,7 +141,7 @@ static GOptionEntry entries[] = {
     {"enable-binlog", 'e', 0, G_OPTION_ARG_NONE, &enable_binlog,
      "Enable binary logging of the restore data", NULL},
     {"innodb-optimize-keys", 0, G_OPTION_FLAG_OPTIONAL_ARG, G_OPTION_ARG_CALLBACK , &arguments_callback,
-     "Creates the table without the indexes and it adds them at the end", NULL},
+     "Creates the table without the indexes and it adds them at the end. Offer 3 modes: AFTER_IMPORT_PER_TABLE, AFTER_IMPORT_ALL_TABLES, AFTER_IMPORT_SINGLE_INDEX", NULL},
     { "set-names",0, 0, G_OPTION_ARG_STRING, &set_names_str, 
       "Sets the names, use it at your own risk, default binary", NULL },
     {"logfile", 'L', 0, G_OPTION_ARG_FILENAME, &logfile,
@@ -157,7 +167,7 @@ static GOptionEntry entries[] = {
     { "pmm-path", 0, 0, G_OPTION_ARG_STRING, &pmm_path,
       "which default value will be /usr/local/percona/pmm2/collectors/textfile-collector/high-resolution", NULL },
     { "pmm-resolution", 0, 0, G_OPTION_ARG_STRING, &pmm_resolution,
-      "which default will be high", NULL },    
+      "which default will be high", NULL },
     {NULL, 0, 0, G_OPTION_ARG_NONE, NULL, NULL, NULL}};
 
 GHashTable * myloader_initialize_hash_of_session_variables(){

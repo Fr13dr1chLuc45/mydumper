@@ -42,12 +42,14 @@ extern guint num_threads;
 extern gboolean innodb_optimize_keys;
 extern gboolean innodb_optimize_keys_per_table;
 extern gboolean innodb_optimize_keys_all_tables;
+extern gboolean innodb_optimize_keys_single_index;
 extern gchar *directory;
 extern guint errors;
 extern gboolean skip_post;
 extern gchar *source_db;
 extern gboolean skip_triggers;
 extern gboolean no_data;
+extern guint commit_count;
 
 GAsyncQueue *data_filename_queue;
 GAsyncQueue *data_filename_queue_completed;
@@ -373,14 +375,22 @@ void *process_directory_queue(struct thread_data * td) {
           dbt->start_index_time=g_date_time_new_now_local();
           g_mutex_unlock(dbt->mutex);
           if (dbt->indexes != NULL){ 
-            if (innodb_optimize_keys_per_table ) {
+            if (innodb_optimize_keys_per_table) {
               g_message("Thread %d restoring indexes `%s`.`%s`", td->thread_id,
                   dbt->real_database, dbt->real_table);
               guint query_counter=0;
               restore_data_in_gstring(td, dbt->indexes, FALSE, &query_counter);
-            }else if (innodb_optimize_keys_all_tables ){
-              struct restore_job *rj = new_schema_restore_job(strdup("index"),JOB_RESTORE_STRING, dbt, dbt->real_database,dbt->indexes,"indexes");
-              g_async_queue_push(td->conf->post_table_queue, new_job(JOB_RESTORE,rj,dbt->real_database));
+            }else if (innodb_optimize_keys_all_tables) {
+              struct restore_job *rj = new_schema_restore_job(strdup("index"), JOB_RESTORE_STRING, dbt, dbt->real_database,dbt->indexes, "indexes");
+              g_async_queue_push(td->conf->post_table_queue, new_job(JOB_RESTORE, rj, dbt->real_database));
+            }else if (innodb_optimize_keys_single_index) {
+              // adds for large indexes (>2GB) the option to be created single.
+              guint cache_commit_count = commit_count;
+              cache_commit_count = 0;
+              guint query_counter = 0;
+              g_message("Thread %d restoring indexes `%s`.`%s`", td->thread_id, dbt->real_database, dbt->real_table);
+              restore_data_in_gstring(td, dbt->indexes, FALSE, &query_counter);
+              commit_count = cache_commit_count;
             }else{
               g_critical("This should not happen, wrong config on --innodb-optimize-keys");
             }

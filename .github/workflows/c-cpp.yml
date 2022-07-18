@@ -23,7 +23,7 @@ jobs:
            sudo dpkg -i percona-release_latest.$(lsb_release -sc)_all.deb
            sudo percona-release setup ps80
            sudo apt-get update
-           sudo apt-get install libperconaserverclient21-dev
+           sudo apt --fix-broken install libperconaserverclient21-dev- 
            sudo apt install libatomic1
            sudo apt install cmake g++ git
            sudo apt install libglib2.0-dev zlib1g-dev libpcre3-dev libssl-dev libzstd-dev

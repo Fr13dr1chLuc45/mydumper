@@ -15,15 +15,26 @@ jobs:
     - uses: actions/checkout@v3
     - name: configure
       run: |
-           sudo apt update
-           sudo apt upgrade
-           sudo apt install libatomic1
-           sudo apt install cmake g++ git
-           sudo apt install libglib2.0-dev zlib1g-dev libpcre3-dev libssl-dev libzstd-dev
-           sudo apt install libmysqlclient-dev
-           sudo apt install libmariadbclient-dev
-           sudo apt install libmariadb-dev-compat
-           whereis mysql
+           apt-get update
+           apt-get install -y lsb-release
+           apt-get clean
+           rm -rf /var/lib/apt/lists/
+           . /etc/os-release
+           curl --fail --location --show-error --silent --output /tmp/percona-release.deb https://repo.percona.com/apt/percona-release_latest.${VERSION_CODENAME}_all.deb
+           dpkg -i /tmp/percona-release.deb
+           rm -v /tmp/percona-release.deb
+           percona-release show
+           sed -i 's/curl -Is/curl -ILs/g' /usr/bin/percona-release && \
+           sed -i 's/http:/https:/g' /usr/bin/percona-release && \
+           grep http /usr/bin/percona-release
+           percona-release enable-only ps-80 ${PERCONA_COMPONENT:-release} && \
+           apt-get update && \
+           apt-get install -y \
+            libglib2.0-dev zlib1g-dev libpcre3-dev libssl-dev cmake g++ \
+            libperconaserverclient21-dev libperconaserverclient21 libzstd-dev \
+           && \
+           apt-get clean && \
+           rm -rf /var/lib/apt/lists/
     - name: cmake
       run: cmake .
     - name: make

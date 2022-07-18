@@ -28,7 +28,6 @@ jobs:
            sudo apt install cmake g++ git
            sudo apt install libglib2.0-dev zlib1g-dev libpcre3-dev libssl-dev libzstd-dev
            sudo apt install libmysqlclient-dev
-           sudo apt install libperconaserverclient20-dev
            sudo apt install libmariadbclient-dev
     - name: cmake
       run: cmake .

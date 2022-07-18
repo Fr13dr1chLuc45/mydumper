@@ -29,6 +29,8 @@ jobs:
            sudo apt install libglib2.0-dev zlib1g-dev libpcre3-dev libssl-dev libzstd-dev
            sudo apt install libmysqlclient-dev
            sudo apt install libmariadbclient-dev
+           sudo apt install libmariadb-dev-compat
+           whereis mysql
     - name: cmake
       run: cmake .
     - name: make

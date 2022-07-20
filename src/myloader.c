@@ -115,7 +115,7 @@ gboolean arguments_callback(const gchar *option_name,const gchar *value, gpointe
       innodb_optimize_keys_single_index = FALSE;
       return TRUE;
     }
-    if (g_strstr_len(value,24,"AFTER_IMPORT_SINGLE_INDEX")){
+    if (g_strstr_len(value,25,"AFTER_IMPORT_SINGLE_INDEX")){
       innodb_optimize_keys_all_tables = FALSE;
       innodb_optimize_keys_per_table = FALSE;
       innodb_optimize_keys_single_index = TRUE;

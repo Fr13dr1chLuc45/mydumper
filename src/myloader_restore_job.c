@@ -31,6 +31,7 @@ extern gboolean overwrite_tables;
 extern gchar *db;
 extern gboolean stream;
 extern guint num_threads;
+extern guint commit_count;
 
 gboolean shutdown_triggered=FALSE;
 GAsyncQueue *file_list_to_do=NULL;
@@ -158,12 +159,21 @@ void process_restore_job(struct thread_data *td, struct restore_job *rj){
   }
   struct db_table *dbt=rj->dbt;
   guint query_counter=0;
+  guint cache_commit_count = commit_count;
   switch (rj->type) {
     case JOB_RESTORE_STRING:
       g_message("Thread %d restoring %s `%s`.`%s` from %s", td->thread_id, rj->data.srj->object,
                 dbt->real_database, dbt->real_table, rj->filename);
       restore_data_in_gstring(td, rj->data.srj->statement, FALSE, &query_counter);
       free_schema_restore_job(rj->data.srj);
+      break;
+    case JOB_RESTORE_STRING_SINGLE:
+      commit_count = 0;
+      g_message("Thread %d restoring %s `%s`.`%s` from %s", td->thread_id, rj->data.srj->object,
+                dbt->real_database, dbt->real_table, rj->filename);
+      restore_data_in_gstring(td, rj->data.srj->statement, FALSE, &query_counter);
+      free_schema_restore_job(rj->data.srj);
+      commit_count = cache_commit_count;
       break;
     case JOB_RESTORE_SCHEMA_STRING:
       if (serial_tbl_creation) g_mutex_lock(single_threaded_create_table);

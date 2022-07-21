@@ -385,12 +385,8 @@ void *process_directory_queue(struct thread_data * td) {
               g_async_queue_push(td->conf->post_table_queue, new_job(JOB_RESTORE, rj, dbt->real_database));
             }else if (innodb_optimize_keys_single_index) {
               // adds for large indexes (>2GB) the option to be created single.
-              guint cache_commit_count = commit_count;
-              cache_commit_count = 0;
-              guint query_counter = 0;
-              g_message("Thread %d restoring indexes `%s`.`%s`", td->thread_id, dbt->real_database, dbt->real_table);
-              restore_data_in_gstring(td, dbt->indexes, FALSE, &query_counter);
-              commit_count = cache_commit_count;
+              struct restore_job *rj = new_schema_restore_job(strdup("index"), JOB_RESTORE_STRING_SINGLE, dbt, dbt->real_database,dbt->indexes, "indexes");
+              g_async_queue_push(td->conf->post_table_queue, new_job(JOB_RESTORE, rj, dbt->real_database));
             }else{
               g_critical("This should not happen, wrong config on --innodb-optimize-keys");
             }

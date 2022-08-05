@@ -1,0 +1,51 @@
+name: C/C++ CI
+
+on:
+  push:
+    branches: [ "master" ]
+  pull_request:
+    branches: [ "master" ]
+
+jobs:
+  build:
+
+    runs-on: ubuntu-latest
+
+    steps:
+    - uses: actions/checkout@v3
+    - name: configure
+      run: |
+           sudo apt update
+           sudo apt upgrade
+           sudo apt install software-properties-common
+           sudo apt install gnupg2 curl
+           wget https://repo.percona.com/apt/percona-release_latest.$(lsb_release -sc)_all.deb
+           sudo dpkg -i percona-release_latest.$(lsb_release -sc)_all.deb
+           sudo percona-release setup ps80
+           sudo apt-get update
+           sudo apt --fix-broken install libperconaserverclient21-dev- 
+           sudo apt install libatomic1
+           sudo apt install cmake g++ git
+           sudo apt install libglib2.0-dev zlib1g-dev libpcre3-dev libssl-dev libzstd-dev
+           sudo apt install libmysqlclient-dev
+           sudo apt install libmariadbclient-dev
+           sudo apt install libmariadb-dev-compat
+           whereis mysql
+    - name: cmake
+      run: cmake .
+    - name: make
+      run: make
+    - name: make check
+      run: make check
+    - name: make distcheck
+      run: make distcheck
+    - name: Provide myloader
+      uses: actions/upload-artifact@v3
+      with:
+        name: myloader
+        path: myloader
+    - name: Provide mydumper
+      uses: actions/upload-artifact@v3
+      with:
+        name: mydumper
+        path: mydumper
